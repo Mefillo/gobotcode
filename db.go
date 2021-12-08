@@ -2,15 +2,22 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/ansel1/merry"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"log"
 )
 
 var TableName = "BotData"
+
+type Item struct {
+	ID     string   `json:"id"`
+	Films  []string `json:"films"`
+	Status string   `json:"status"`
+}
 
 func Save(item Item) (err error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
@@ -64,7 +71,6 @@ func Get(key string) (item Item, err error) {
 		msg := "Could not find"
 		return item, merry.New(msg)
 	}
-
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	if err != nil {

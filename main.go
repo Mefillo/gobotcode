@@ -9,11 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -61,11 +58,6 @@ type Update struct {
 	} `json:"message"`
 }
 
-type Item struct {
-	ID    string   `json:"id"`
-	Films []string `json:"films"`
-}
-
 type Response struct {
 	Message string `json: "Answer:"`
 }
@@ -80,11 +72,11 @@ func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyReques
 			Body:       string(`{"ok":"nope"}`),
 		}, nil
 	}
-	err, data := processRequest(*update)
+	data, err := processRequest(*update)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusExpectationFailed,
-			Body:       fmt.Sprintf("error from db: %+v", err),
+			Body:       fmt.Sprintf("error from process: %+v", err),
 		}, nil
 	}
 	// Send response back to Telegram
@@ -116,55 +108,6 @@ func parseTelegramRequest(r events.APIGatewayProxyRequest) (*Update, error) {
 		return nil, errors.New("invalid update id of 0")
 	}
 	return &update, nil
-}
-
-// sanitize remove clutter like /start /punch or the bot name from the string s passed as input
-func sanitize(s string) string {
-	if len(s) >= lenStartCommand {
-		if s[:lenStartCommand] == startCommand {
-			s = s[lenStartCommand:]
-		}
-	}
-
-	if len(s) >= lenPunchCommand {
-		if s[:lenPunchCommand] == punchCommand {
-			s = s[lenPunchCommand:]
-		}
-	}
-	if len(s) >= lenBotTag {
-		if s[:lenBotTag] == botTag {
-			s = s[lenBotTag:]
-		}
-	}
-	return s
-}
-
-// sendTextToTelegramChat sends a text message to the Telegram chat identified by its chat Id
-func sendTextToTelegramChat(chatId int, text string) (string, error) {
-
-	fmt.Printf("Sending %s to chat_id: %d", text, chatId)
-	response, err := http.PostForm(
-		telegramApi,
-		url.Values{
-			"chat_id": {strconv.Itoa(chatId)},
-			"text":    {text},
-		})
-
-	if err != nil {
-		fmt.Printf("error when posting text to the chat: %s", err.Error())
-		return "", err
-	}
-	defer response.Body.Close()
-
-	var bodyBytes, errRead = ioutil.ReadAll(response.Body)
-	if errRead != nil {
-		fmt.Printf("error in parsing telegram answer %s", errRead.Error())
-		return "", err
-	}
-	bodyString := string(bodyBytes)
-	fmt.Printf("Body of Telegram Response: %s", bodyString)
-
-	return bodyString, nil
 }
 
 func main() {
