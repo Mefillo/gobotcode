@@ -62,7 +62,7 @@ type Update struct {
 }
 
 type Item struct {
-	ID   string `json:"id"`
+	ID    string   `json:"id"`
 	Films []string `json:"films"`
 }
 
@@ -72,6 +72,7 @@ type Response struct {
 
 // HandleTelegramWebHook sends a message back to the chat with a punchline starting by the message provided by the user.
 func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// Parse and validate request
 	update, err := parseTelegramRequest(req)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
@@ -79,37 +80,15 @@ func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyReques
 			Body:       string(`{"ok":"nope"}`),
 		}, nil
 	}
-	fmt.Printf("UPDATE")
-	fmt.Printf("%+v", update)
-	// Sanitize input
-	var sanitizedSeed = sanitize(update.Message.Text)
-
-	// Get response
-	var response = sanitizedSeed + update.Message.From.Username
-
-	// Get current record
-	var item Item
-	item, err = Get(update.Message.From.Username)
+	err, data := processRequest(*update)
 	if err != nil {
-		fmt.Printf("\n !!! Got error getting: %+v\n", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusExpectationFailed,
+			Body:       fmt.Sprintf("error from db: %+v", err),
+		}, nil
 	}
-
-	// Change item
-	item.Films = append(item.Films, update.Message.Text)
-
-	// Save response to DB
-	stringItem := fmt.Sprintf(`{
-		"id": "%s",
-		"film": "%s"
-	}`, update.Message.From.Username, update.Message.Text)
-	err = json.Unmarshal([]byte(stringItem), &item)
-	err = Save(item)
-	if err != nil {
-		fmt.Printf("Got error saving data to DB: %+v", err)
-	}
-
 	// Send response back to Telegram
-	var telegramResponseBody, errTelegram = sendTextToTelegramChat(update.Message.Chat.ID, response)
+	var telegramResponseBody, errTelegram = sendTextToTelegramChat(update.Message.Chat.ID, data.Response)
 	fmt.Printf("SENDING RESUTLS: %+v !!! %+v", telegramResponseBody, errTelegram)
 	if errTelegram != nil {
 		return events.APIGatewayProxyResponse{
@@ -119,7 +98,7 @@ func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyReques
 	} else {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusOK,
-			Body:       string("ok"),
+			Body:       `{"success": true}`,
 		}, nil
 	}
 }
@@ -134,7 +113,7 @@ func parseTelegramRequest(r events.APIGatewayProxyRequest) (*Update, error) {
 	}
 	if update.UpdateID == 0 {
 		fmt.Printf("invalid update id, got update id = 0")
-		return nil, errors.New("invalid update id of 0 indicates failure to parse incoming update")
+		return nil, errors.New("invalid update id of 0")
 	}
 	return &update, nil
 }
