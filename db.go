@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ansel1/merry"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -17,6 +16,7 @@ type Item struct {
 	ID     string   `json:"id"`
 	Films  []string `json:"films"`
 	Status string   `json:"status"`
+	Choice int      `json:"choice"`
 }
 
 func Save(item Item) (err error) {
@@ -68,13 +68,16 @@ func Get(key string) (item Item, err error) {
 	}
 
 	if result.Item == nil {
-		msg := "Could not find"
-		return item, merry.New(msg)
+		fmt.Print("Could not find, creating")
+		item.ID = key
+		err = Save(item)
+		return
+		// return item, merry.New(msg)
 	}
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	if err != nil {
-		log.Printf(fmt.Sprintf("Failed to unmarshal Record, %v", err))
+		fmt.Printf("Failed to unmarshal Record, %v", err)
 		return item, err
 	}
 

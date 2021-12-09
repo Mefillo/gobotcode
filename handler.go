@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -12,7 +11,7 @@ type Data struct {
 	Response string
 }
 
-var ONE_LEVEL = map[string]bool{"fl": true}
+var COMMANDS = map[string]bool{"fl": true, "fa": true}
 
 func processRequest(update Update) (data Data, err error) {
 	fmt.Printf("UPDATE")
@@ -20,6 +19,7 @@ func processRequest(update Update) (data Data, err error) {
 
 	// Sanitize input
 	var sanitizedSeed = sanitize(update.Message.Text)
+	var response string
 
 	// Get current record
 	item, err := Get(update.Message.From.Username)
@@ -27,33 +27,28 @@ func processRequest(update Update) (data Data, err error) {
 		fmt.Printf("\n !!! Got error getting: %+v\n", err)
 	}
 
-	// Check for one level actions
-	if ONE_LEVEL[item.Status] {
-		return one_level_handler(item, item.Status)
-	}
-
-	// Change item
-	item.Films = append(item.Films, sanitizedSeed)
-
-	// Save response to DB
-	stringItem := fmt.Sprintf(`{
-		"id": "%s",
-		"film": "%s"
-	}`, update.Message.From.Username, update.Message.Text)
-
-	err = json.Unmarshal([]byte(stringItem), &item)
-	if err != nil {
-		fmt.Printf("Got error unmarshaling data: %+v", err)
-		return
-	}
-
-	err = Save(item)
-	var response string
-	if err != nil {
-		fmt.Printf("Got error saving data to DB: %+v", err)
-		return
+	// Check if there is conv in progress
+	if item.Status != "" {
+		fmt.Printf("Current status not nil: %s", item.Status)
+		switch item.Status {
+		case "fa":
+			if !stringInSlice(sanitizedSeed, item.Films) {
+				item.Films = append(item.Films, sanitizedSeed)
+			}
+			item.Status = ""
+			err = Save(item)
+			if err != nil {
+				fmt.Printf("Got error saving data to DB: %+v", err)
+				return
+			}
+			response = "ok"
+		}
 	} else {
-		response = fmt.Sprintf("New film list: %+v", item.Films)
+		// Check for commands actions
+		if COMMANDS[sanitizedSeed] {
+			return commands_handler(item, sanitizedSeed)
+		}
+		response = "?"
 	}
 
 	d := Data{Response: response}
@@ -82,12 +77,23 @@ func sanitize(s string) string {
 	return s
 }
 
-func one_level_handler(item Item, status string) (data Data, err error) {
+func commands_handler(item Item, status string) (data Data, err error) {
 	switch status {
 	case "fl":
 		data.Response = strings.Join(item.Films, ", ")
 		return
+	case "fa":
+		// save new status
+		item.Status = "fa"
+		err = Save(item)
+		if err != nil {
+			return
+		}
+		// ask for new movie for the list
+		data.Response = "Add new movie title:"
+		return
 	}
+
 	err = merry.New(fmt.Sprintf("No such action for one level handler: %+v", status))
 	return
 }
