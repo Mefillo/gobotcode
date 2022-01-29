@@ -74,6 +74,7 @@ func sanitize(s string) string {
 			s = s[lenBotTag:]
 		}
 	}
+	s = strings.ToLower(s)
 	return s
 }
 
