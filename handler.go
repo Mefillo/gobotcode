@@ -11,7 +11,7 @@ type Data struct {
 	Response string
 }
 
-var COMMANDS = map[string]bool{"fl": true, "fa": true}
+var COMMANDS = map[string]bool{"fl": true, "fa": true, "fd": true}
 
 func processRequest(update Update) (data Data, err error) {
 	fmt.Printf("UPDATE")
