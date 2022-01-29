@@ -72,6 +72,12 @@ func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyReques
 			Body:       string(`{"ok":"nope"}`),
 		}, nil
 	}
+	if update.Message.From.Username == "" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusOK,
+			Body:       `{"success": true}`,
+		}, nil
+	}
 	data, err := processRequest(*update)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
@@ -97,6 +103,9 @@ func HandleTelegramWebHook(ctx context.Context, req events.APIGatewayProxyReques
 
 // parseTelegramRequest handles incoming update from the Telegram web hook
 func parseTelegramRequest(r events.APIGatewayProxyRequest) (*Update, error) {
+	// var wht interface{}
+	// json.Unmarshal([]byte(r.Body), &wht)
+	// fmt.Printf("!!!WHATVR: %+v\n", wht)
 	var update Update
 	err := json.Unmarshal([]byte(r.Body), &update)
 	if err != nil {
