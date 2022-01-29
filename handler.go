@@ -42,6 +42,14 @@ func processRequest(update Update) (data Data, err error) {
 				return
 			}
 			response = "ok"
+		case "fd":
+			item.Status = ""
+			err = Save(item)
+			if err != nil {
+				fmt.Printf("Got error saving data to DB: %+v", err)
+				return
+			}
+			response = "not supported yet"
 		}
 	} else {
 		// Check for commands actions
@@ -92,6 +100,16 @@ func commands_handler(item Item, status string) (data Data, err error) {
 		}
 		// ask for new movie for the list
 		data.Response = "Add new movie title:"
+		return
+	case "fd":
+		// save new status
+		item.Status = "fd"
+		err = Save(item)
+		if err != nil {
+			return
+		}
+		// ask for new movie for the list
+		data.Response = convertToIndexed(item.Films)
 		return
 	}
 
