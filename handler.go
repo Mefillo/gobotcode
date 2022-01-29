@@ -51,7 +51,7 @@ func processRequest(update Update) (data Data, err error) {
 			if e != nil {
 				response = "meh"
 			} else {
-				if indexToDelete >= len(item.Films) && indexToDelete < 0 {
+				if (indexToDelete >= len(item.Films)) || (indexToDelete < 0) {
 					response = "hold your hourses pal"
 				} else {
 					response = item.Films[indexToDelete]
