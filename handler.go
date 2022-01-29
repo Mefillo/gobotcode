@@ -13,6 +13,8 @@ type Data struct {
 
 var COMMANDS = map[string]bool{"fl": true, "fa": true, "fd": true}
 
+const CANCEL = "0"
+
 func processRequest(update Update) (data Data, err error) {
 	fmt.Printf("UPDATE")
 	fmt.Printf("%+v", update)
@@ -32,7 +34,7 @@ func processRequest(update Update) (data Data, err error) {
 		fmt.Printf("Current status not nil: %s", item.Status)
 		switch item.Status {
 		case "fa":
-			if !stringInSlice(sanitizedSeed, item.Films) {
+			if !stringInSlice(sanitizedSeed, item.Films) && sanitizedSeed != CANCEL {
 				item.Films = append(item.Films, sanitizedSeed)
 			}
 			item.Status = ""
