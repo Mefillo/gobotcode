@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ansel1/merry"
@@ -13,7 +14,7 @@ type Data struct {
 
 var COMMANDS = map[string]bool{"fl": true, "fa": true, "fd": true}
 
-const CANCEL = "0"
+const CANCEL = "c"
 
 func processRequest(update Update) (data Data, err error) {
 	fmt.Printf("UPDATE")
@@ -46,17 +47,27 @@ func processRequest(update Update) (data Data, err error) {
 			response = "ok"
 		case "fd":
 			item.Status = ""
+			indexToDelete, e := strconv.Atoi(sanitizedSeed)
+			if e != nil {
+				response = "meh"
+			} else {
+				if indexToDelete >= len(item.Films) {
+					response = "hold your hourses pal"
+				} else {
+					response = item.Films[indexToDelete]
+				}
+			}
 			err = Save(item)
 			if err != nil {
 				fmt.Printf("Got error saving data to DB: %+v", err)
 				return
 			}
-			response = "not supported yet"
 		}
 	} else {
 		// Check for commands actions
-		if COMMANDS[sanitizedSeed] {
-			return commands_handler(item, sanitizedSeed)
+		com := strings.ToLower(sanitizedSeed)
+		if COMMANDS[com] {
+			return commands_handler(item, com)
 		}
 		response = "?"
 	}
@@ -84,7 +95,7 @@ func sanitize(s string) string {
 			s = s[lenBotTag:]
 		}
 	}
-	s = strings.ToLower(s)
+
 	return s
 }
 
