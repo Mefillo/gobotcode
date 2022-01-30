@@ -49,12 +49,20 @@ func processRequest(update Update) (data Data, err error) {
 			item.Status = ""
 			indexToDelete, e := strconv.Atoi(sanitizedSeed)
 			if e != nil {
+				item.Films = append(item.Films, sanitizedSeed)
 				response = "meh"
 			} else {
 				if (indexToDelete >= len(item.Films)) || (indexToDelete < 0) {
 					response = "hold your hourses pal"
 				} else {
-					response = item.Films[indexToDelete]
+					removed := item.Films[indexToDelete]
+					rByIn(&item.Films, indexToDelete)
+					err = Save(item)
+					if err != nil {
+						fmt.Printf("Got error saving data to DB: %+v", err)
+						return
+					}
+					response = removed
 				}
 			}
 			err = Save(item)

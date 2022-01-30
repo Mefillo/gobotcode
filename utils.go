@@ -26,3 +26,10 @@ func convertToIndexed(list []string) (result string) {
 	}
 	return
 }
+
+func rByIn(b *([]string), i int) {
+	a := *b
+	copy(a[i:], a[i+1:]) // Shift a[i+1:] left one index.
+	a[len(a)-1] = ""     // Erase last element (write zero value).
+	a = a[:len(a)-1]     // Truncate slice.
+}
