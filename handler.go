@@ -27,6 +27,7 @@ func processRequest(update Update) (data Data, err error) {
 	// Get current record
 	item, err := Get(update.Message.From.Username)
 	if err != nil {
+		// 		TODO: return on error
 		fmt.Printf("\n !!! Got error getting: %+v\n", err)
 	}
 
