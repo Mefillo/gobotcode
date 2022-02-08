@@ -15,12 +15,16 @@ type Data struct {
 var COMMANDS = map[string]bool{"fl": true, "fa": true, "fd": true}
 
 const CANCEL = "c"
-
+// todo: check! make it single responsibility function
+// TODO: validate status
+// TODO: make it shallow 
+// TODO: Create unit tests
 func processRequest(update Update) (data Data, err error) {
 	fmt.Printf("UPDATE")
 	fmt.Printf("%+v", update)
 
 	// Sanitize input
+
 	var sanitizedSeed = sanitize(update.Message.Text)
 	var response string
 
@@ -31,7 +35,9 @@ func processRequest(update Update) (data Data, err error) {
 	}
 
 	// Check if there is conv in progress
+	// 		TODO: make it more straignforward by exiting early if possible (status is empty)
 	if item.Status != "" {
+
 		fmt.Printf("Current status not nil: %s", item.Status)
 		switch item.Status {
 		case "fa":
